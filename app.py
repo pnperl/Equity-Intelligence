@@ -1,4 +1,11 @@
-"""Command-line entry point for Equity Intelligence analysis."""
+"""Entrypoints for Equity Intelligence analysis.
+
+The module supports two execution modes:
+
+- ``python app.py SYMBOL --period 1y`` for CLI HTML report generation.
+- ``streamlit run app.py`` for live dashboard hosting when a deployment platform
+  is configured to use ``app.py`` as the Streamlit entrypoint.
+"""
 
 from __future__ import annotations
 
@@ -23,13 +30,26 @@ def analyze_symbol(symbol: str, period: str = "1y") -> str:
 
 
 def main() -> None:
-    """Parse CLI arguments and print an HTML report."""
-    parser = argparse.ArgumentParser(description="Analyze an NSE equity symbol.")
-    parser.add_argument("symbol", help="NSE symbol, for example RELIANCE or INFY")
+    """Run the CLI report flow or the Streamlit dashboard when no symbol is supplied."""
+    parser = argparse.ArgumentParser(description="Analyze an NSE equity symbol or run the Streamlit dashboard.")
+    parser.add_argument("symbol", nargs="?", help="NSE symbol, for example RELIANCE or INFY")
     parser.add_argument("--period", default="1y", help="yfinance period, for example 6mo, 1y, or 5y")
     args = parser.parse_args()
-    LOGGER.info("Analyzing %s", args.symbol)
-    print(analyze_symbol(args.symbol, args.period))
+
+    if args.symbol:
+        LOGGER.info("Analyzing %s", args.symbol)
+        print(analyze_symbol(args.symbol, args.period))
+        return
+
+    LOGGER.info("No CLI symbol supplied; starting Streamlit dashboard entrypoint")
+    _run_streamlit_dashboard()
+
+
+def _run_streamlit_dashboard() -> None:
+    """Run the dashboard implementation for Streamlit deployments that target app.py."""
+    from dashboard.streamlit_app import main as dashboard_main
+
+    dashboard_main()
 
 
 if __name__ == "__main__":

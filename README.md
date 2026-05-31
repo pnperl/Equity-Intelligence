@@ -33,7 +33,7 @@ python app.py RELIANCE --period 1y
 ## Dashboard
 
 ```bash
-streamlit run dashboard/streamlit_app.py
+streamlit run streamlit_app.py
 ```
 
 ## Live Streamlit deployment
@@ -45,7 +45,7 @@ Recommended Streamlit Community Cloud settings:
 | Setting | Value |
 | --- | --- |
 | Branch | `main` |
-| Main file path | `streamlit_app.py` |
+| Main file path | `streamlit_app.py` preferred; `app.py` is also supported |
 | Python version | `3.12` from Advanced settings |
 | Dependencies | `requirements.txt` |
 
@@ -58,6 +58,8 @@ Deployment steps:
 5. Set **Main file path** to `streamlit_app.py`.
 6. Select Python `3.12` in **Advanced settings**.
 7. Click **Deploy** and wait for the `streamlit.app` URL.
+
+If your host is already configured to run `app.py`, you can keep that setting; `app.py` now falls back to the Streamlit dashboard when no CLI symbol is supplied.
 
 See `STREAMLIT_DEPLOYMENT.md` for the full live deployment checklist.
 

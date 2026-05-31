@@ -14,7 +14,7 @@ Use these settings when creating the app:
 | --- | --- |
 | Repository | `https://github.com/<USER>/Equity-Intelligence` |
 | Branch | `main` |
-| Main file path | `streamlit_app.py` |
+| Main file path | `streamlit_app.py` preferred; `app.py` is also supported |
 | Python version | `3.12` from Advanced settings |
 | Dependencies | `requirements.txt` |
 
@@ -25,7 +25,7 @@ Use these settings when creating the app:
 3. Click **Create app**.
 4. Choose **Yup, I have an app**.
 5. Select this repository and the `main` branch.
-6. Set **Main file path** to `streamlit_app.py`.
+6. Set **Main file path** to `streamlit_app.py`. If your deployment already points at `app.py`, that is now safe too because `app.py` opens the dashboard when no CLI symbol is supplied.
 7. Open **Advanced settings** and select Python `3.12`.
 8. Click **Deploy**.
 9. Wait for the build logs to finish. The app will open on a `streamlit.app` URL.
@@ -33,6 +33,8 @@ Use these settings when creating the app:
 ## Why `streamlit_app.py` is at the repository root
 
 Streamlit Community Cloud runs apps from the repository root and installs dependencies from `requirements.txt`. A root `streamlit_app.py` entrypoint is the least ambiguous configuration and imports the real dashboard implementation from `dashboard/streamlit_app.py`.
+
+`app.py` remains available for CLI usage with `python app.py RELIANCE --period 1y`, but it also supports Streamlit deployments by launching the dashboard when no symbol argument is present. This prevents the repeated `app.py: error: the following arguments are required: symbol` failure if a live host points Streamlit at `app.py`.
 
 ## Troubleshooting checklist
 
