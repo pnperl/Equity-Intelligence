@@ -2,6 +2,9 @@ name: One-Click Force Merge
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write # This line grants write access to allow pushing code
+
 jobs:
   merge:
     runs-on: ubuntu-latest
