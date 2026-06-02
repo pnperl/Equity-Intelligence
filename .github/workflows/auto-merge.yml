@@ -1,0 +1,20 @@
+name: One-Click Force Merge
+on:
+  workflow_dispatch: # This line creates the manual "Run workflow" button
+
+  jobs:
+    merge:
+        runs-on: ubuntu-latest
+            steps:
+                  - uses: actions/checkout@v4
+                          with:
+                                    fetch-depth: 0
+                                              token: ${{ secrets.GITHUB_TOKEN }}
+                                                    - name: Auto Merge Favoring Current
+                                                            run: |
+                                                                      git config user.name "GitHub Action"
+                                                                                git config user.email "actions@github.com"
+                                                                                          git checkout main # Change to your target branch
+                                                                                                    git merge ${{ github.ref_name }} -X ours --no-edit
+                                                                                                              git push origin main
+                                                                                                              
