@@ -135,7 +135,14 @@ def _portfolio_page() -> None:
     st.subheader("Portfolio allocation and risk")
     capital = st.number_input("Capital", min_value=1_000.0, value=100_000.0, step=5_000.0)
     symbols = _parse_symbols(st.text_area("Comma-separated symbols", value=DEFAULT_WATCHLIST, key="portfolio_symbols"))
-    st.dataframe(equal_weight_allocation(symbols, capital), use_container_width=True, hide_index=True)
+    if not symbols:
+        st.info("Enter at least one symbol to compute an allocation.")
+    else:
+        try:
+            st.dataframe(equal_weight_allocation(symbols, capital), use_container_width=True, hide_index=True)
+        except ValueError as exc:
+            st.error("Unable to compute allocation.")
+            st.caption(f"Technical detail: {exc}")
 
     st.divider()
     st.markdown("### Position sizing")

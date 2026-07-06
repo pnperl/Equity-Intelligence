@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -52,9 +55,17 @@ def load_settings(path: str | Path = "config/settings.yaml") -> AppSettings:
     """Load settings from YAML, falling back to safe defaults for missing values."""
     settings_path = Path(path)
     if not settings_path.exists():
+        LOGGER.info("Settings file %s not found; using defaults", settings_path)
         return AppSettings()
 
-    raw = yaml.safe_load(settings_path.read_text()) or {}
+    try:
+        raw = yaml.safe_load(settings_path.read_text()) or {}
+    except yaml.YAMLError:
+        LOGGER.exception("Failed to parse settings file %s", settings_path)
+        raise
+    if not isinstance(raw, dict):
+        raise ValueError("Settings file root must be a mapping")
+    LOGGER.info("Loaded settings from %s", settings_path)
     return AppSettings(
         market=MarketSettings(**_section(raw, "market")),
         scoring=ScoringSettings(**_section(raw, "scoring")),
