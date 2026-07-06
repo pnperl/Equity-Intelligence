@@ -11,11 +11,10 @@ from __future__ import annotations
 
 import argparse
 import logging
+from pathlib import Path
 
-from data import MarketDataClient
-from indicators import add_indicators
 from reports import render_stock_report
-from scoring import score_stock
+from services import analyze_stock
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 LOGGER = logging.getLogger(__name__)
@@ -23,10 +22,8 @@ LOGGER = logging.getLogger(__name__)
 
 def analyze_symbol(symbol: str, period: str = "1y") -> str:
     """Fetch, enrich, score, and render an HTML report for a symbol."""
-    client = MarketDataClient()
-    frame = add_indicators(client.history(symbol, period=period))
-    score = score_stock(frame)
-    return render_stock_report(symbol=symbol.upper(), score=score)
+    analysis = analyze_stock(symbol, period=period)
+    return render_stock_report(symbol=analysis.symbol, score=analysis.score)
 
 
 def main() -> None:
@@ -34,11 +31,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze an NSE equity symbol or run the Streamlit dashboard.")
     parser.add_argument("symbol", nargs="?", help="NSE symbol, for example RELIANCE or INFY")
     parser.add_argument("--period", default="1y", help="yfinance period, for example 6mo, 1y, or 5y")
+    parser.add_argument("--output", help="Optional path to write the generated HTML report")
     args = parser.parse_args()
 
     if args.symbol:
         LOGGER.info("Analyzing %s", args.symbol)
-        print(analyze_symbol(args.symbol, args.period))
+        html = analyze_symbol(args.symbol, args.period)
+        if args.output:
+            Path(args.output).write_text(html, encoding="utf-8")
+            LOGGER.info("Wrote report to %s", args.output)
+        else:
+            print(html)
         return
 
     LOGGER.info("No CLI symbol supplied; starting Streamlit dashboard entrypoint")

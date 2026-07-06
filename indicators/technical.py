@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 
@@ -22,8 +23,13 @@ def rsi(close: pd.Series, window: int = 14) -> pd.Series:
     losses = -delta.clip(upper=0)
     avg_gain = gains.ewm(alpha=1 / window, min_periods=window, adjust=False).mean()
     avg_loss = losses.ewm(alpha=1 / window, min_periods=window, adjust=False).mean()
-    rs = avg_gain / avg_loss.replace(0, pd.NA)
-    return 100 - (100 / (1 + rs))
+    rs = avg_gain / avg_loss
+    result = 100 - (100 / (1 + rs))
+    # A window with no losses yields rs = inf -> RSI 100; a window with no
+    # gains and no losses (flat prices) is treated as neutral RSI 50.
+    result = result.where(avg_loss != 0, 100.0)
+    result = result.where(~((avg_gain == 0) & (avg_loss == 0)), 50.0)
+    return result
 
 
 def macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> pd.DataFrame:
@@ -61,10 +67,34 @@ def atr(frame: pd.DataFrame, window: int = 14) -> pd.Series:
     return true_range.ewm(alpha=1 / window, min_periods=window, adjust=False).mean()
 
 
+def adx(frame: pd.DataFrame, window: int = 14) -> pd.DataFrame:
+    """Calculate ADX, +DI, and -DI trend-strength indicators."""
+    high_diff = frame["High"].diff()
+    low_diff = -frame["Low"].diff()
+    plus_dm = pd.Series(np.where((high_diff > low_diff) & (high_diff > 0), high_diff, 0.0), index=frame.index)
+    minus_dm = pd.Series(np.where((low_diff > high_diff) & (low_diff > 0), low_diff, 0.0), index=frame.index)
+    atr_value = atr(frame, window).replace(0, pd.NA)
+    plus_di = 100 * plus_dm.ewm(alpha=1 / window, min_periods=window, adjust=False).mean() / atr_value
+    minus_di = 100 * minus_dm.ewm(alpha=1 / window, min_periods=window, adjust=False).mean() / atr_value
+    dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, pd.NA)
+    return pd.DataFrame(
+        {
+            "adx_14": dx.ewm(alpha=1 / window, min_periods=window, adjust=False).mean(),
+            "plus_di_14": plus_di,
+            "minus_di_14": minus_di,
+        }
+    )
+
+
 def obv(frame: pd.DataFrame) -> pd.Series:
     """Calculate On-Balance Volume."""
-    direction = frame["Close"].diff().fillna(0).apply(lambda value: 1 if value > 0 else (-1 if value < 0 else 0))
+    direction = np.sign(frame["Close"].diff().fillna(0))
     return (direction * frame["Volume"].fillna(0)).cumsum()
+
+
+def daily_returns(close: pd.Series) -> pd.Series:
+    """Calculate simple percentage returns."""
+    return close.pct_change().fillna(0)
 
 
 def add_indicators(frame: pd.DataFrame) -> pd.DataFrame:
@@ -72,10 +102,14 @@ def add_indicators(frame: pd.DataFrame) -> pd.DataFrame:
     enriched = frame.copy()
     enriched["sma_20"] = sma(enriched["Close"], 20)
     enriched["sma_50"] = sma(enriched["Close"], 50)
+    enriched["sma_200"] = sma(enriched["Close"], 200)
     enriched["ema_20"] = ema(enriched["Close"], 20)
+    enriched["ema_50"] = ema(enriched["Close"], 50)
     enriched["rsi_14"] = rsi(enriched["Close"], 14)
     enriched = enriched.join(macd(enriched["Close"]))
     enriched = enriched.join(bollinger_bands(enriched["Close"]))
     enriched["atr_14"] = atr(enriched, 14)
+    enriched = enriched.join(adx(enriched, 14))
     enriched["obv"] = obv(enriched)
+    enriched["daily_return"] = daily_returns(enriched["Close"])
     return enriched

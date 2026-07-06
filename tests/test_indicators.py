@@ -29,3 +29,4 @@ def test_add_indicators_preserves_rows() -> None:
     assert len(enriched) == len(frame)
     assert "rsi_14" in enriched.columns
     assert "macd" in enriched.columns
+    assert "adx_14" in enriched.columns
