@@ -38,7 +38,7 @@ def main() -> None:
         LOGGER.info("Analyzing %s", args.symbol)
         html = analyze_symbol(args.symbol, args.period)
         if args.output:
-            Path(args.output).write_text(html)
+            Path(args.output).write_text(html, encoding="utf-8")
             LOGGER.info("Wrote report to %s", args.output)
         else:
             print(html)

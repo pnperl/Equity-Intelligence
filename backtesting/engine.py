@@ -22,6 +22,8 @@ class BacktestResult:
 
 def moving_average_crossover(frame: pd.DataFrame, fast: str = "sma_20", slow: str = "sma_50") -> BacktestResult:
     """Backtest a long-only moving-average crossover strategy."""
+    if frame.empty:
+        raise ValueError("Cannot backtest an empty DataFrame")
     required = {"Close", fast, slow}
     missing = required.difference(frame.columns)
     if missing:

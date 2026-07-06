@@ -23,8 +23,13 @@ def rsi(close: pd.Series, window: int = 14) -> pd.Series:
     losses = -delta.clip(upper=0)
     avg_gain = gains.ewm(alpha=1 / window, min_periods=window, adjust=False).mean()
     avg_loss = losses.ewm(alpha=1 / window, min_periods=window, adjust=False).mean()
-    rs = avg_gain / avg_loss.replace(0, pd.NA)
-    return 100 - (100 / (1 + rs))
+    rs = avg_gain / avg_loss
+    result = 100 - (100 / (1 + rs))
+    # A window with no losses yields rs = inf -> RSI 100; a window with no
+    # gains and no losses (flat prices) is treated as neutral RSI 50.
+    result = result.where(avg_loss != 0, 100.0)
+    result = result.where(~((avg_gain == 0) & (avg_loss == 0)), 50.0)
+    return result
 
 
 def macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> pd.DataFrame:

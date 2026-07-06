@@ -23,7 +23,10 @@ def score_stock(frame: pd.DataFrame, fundamental_score: float | None = None) -> 
     if frame.empty:
         raise ValueError("Cannot score an empty DataFrame")
 
-    latest = frame.dropna(subset=["Close"]).iloc[-1]
+    valid = frame.dropna(subset=["Close"])
+    if valid.empty:
+        raise ValueError("No valid Close prices to score")
+    latest = valid.iloc[-1]
     technical = _technical_score(latest)
     risk = _risk_score(latest)
     if fundamental_score is None:

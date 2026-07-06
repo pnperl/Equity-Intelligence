@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 import pandas as pd
@@ -10,6 +11,8 @@ from data import MarketDataClient
 from fundamentals import FundamentalSnapshot, build_fundamental_snapshot, score_fundamentals
 from indicators import add_indicators
 from scoring import ScoreBreakdown, score_stock
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -42,9 +45,14 @@ def analyze_stock(symbol: str, period: str = "1y", include_fundamentals: bool = 
 
 def analyze_watchlist(symbols: list[str], period: str = "1y") -> pd.DataFrame:
     """Analyze a watchlist and return a summary table."""
+    columns = ["symbol", "close", "technical", "risk", "overall", "rating"]
     rows: list[dict[str, object]] = []
     for symbol in symbols:
-        analysis = analyze_stock(symbol, period=period, include_fundamentals=False)
+        try:
+            analysis = analyze_stock(symbol, period=period, include_fundamentals=False)
+        except Exception:
+            LOGGER.exception("Unable to analyze %s", symbol)
+            continue
         rows.append(
             {
                 "symbol": analysis.symbol,
@@ -55,4 +63,6 @@ def analyze_watchlist(symbols: list[str], period: str = "1y") -> pd.DataFrame:
                 "rating": analysis.score.rating,
             }
         )
+    if not rows:
+        return pd.DataFrame(columns=columns)
     return pd.DataFrame(rows).sort_values("overall", ascending=False)
